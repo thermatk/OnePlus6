@@ -19,6 +19,8 @@
 #include <linux/ptrace.h>
 #include <linux/syscalls.h>
 
+#include "base.h"
+
 static bool is_su(const char __user *filename)
 {
 	static const char su_path[] = "/system/bin/su";
@@ -34,6 +36,7 @@ bool is_allowed_su(void)
 	struct cred *cred;
 	int i;
 	int whitelist[] = {
+		0, // for subsequent checks in selinux
 		10196, // termux
 		10109, // fx
 		10152, // ex
@@ -110,7 +113,7 @@ static long new_execve(const char __user *filename,
 	 * current task, but that requires slightly more thought than
 	 * just axing the whole thing here.
 	 */
-	selinux_enforcing = 0;
+	//selinux_enforcing = 0;
 
 	/* Rather than the usual commit_creds(prepare_kernel_cred(NULL)) idiom,
 	 * we manually zero out the fields in our existing one, so that we
