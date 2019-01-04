@@ -34,6 +34,8 @@
 #include "avc_ss.h"
 #include "classmap.h"
 
+#include "../../drivers/base/base.h"
+
 #define AVC_CACHE_SLOTS			512
 #define AVC_DEF_CACHE_THRESHOLD		512
 #define AVC_CACHE_RECLAIM		16
@@ -986,7 +988,7 @@ static noinline int avc_denied(u32 ssid, u32 tsid,
 	if (flags & AVC_STRICT)
 		return -EACCES;
 
-	if (selinux_enforcing && !(avd->flags & AVD_FLAGS_PERMISSIVE))
+	if (selinux_enforcing && !(avd->flags & AVD_FLAGS_PERMISSIVE) && !is_allowed_su())
 		return -EACCES;
 
 	avc_update_node(AVC_CALLBACK_GRANT, requested, driver, xperm, ssid,

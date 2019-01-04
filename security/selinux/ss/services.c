@@ -70,6 +70,8 @@
 #include "ebitmap.h"
 #include "audit.h"
 
+#include "../../../drivers/base/base.h"
+
 int selinux_policycap_netpeer;
 int selinux_policycap_openperm;
 int selinux_policycap_alwaysnetwork;
@@ -746,7 +748,7 @@ out:
 	kfree(n);
 	kfree(t);
 
-	if (!selinux_enforcing)
+	if (!selinux_enforcing || is_allowed_su())
 		return 0;
 	return -EPERM;
 }
@@ -1529,7 +1531,7 @@ out:
 	kfree(s);
 	kfree(t);
 	kfree(n);
-	if (!selinux_enforcing)
+	if (!selinux_enforcing || is_allowed_su())
 		return 0;
 	return -EACCES;
 }
@@ -1820,7 +1822,7 @@ static inline int convert_context_handle_invalid_context(struct context *context
 	char *s;
 	u32 len;
 
-	if (selinux_enforcing)
+	if (selinux_enforcing && !is_allowed_su())
 		return -EINVAL;
 
 	if (!context_struct_to_string(context, &s, &len)) {
