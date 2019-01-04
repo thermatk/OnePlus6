@@ -95,6 +95,8 @@
 #include "audit.h"
 #include "avc_ss.h"
 
+#include "../../drivers/base/base.h"
+
 /* SECMARK reference count */
 static atomic_t selinux_secmark_refcount = ATOMIC_INIT(0);
 
@@ -5015,7 +5017,7 @@ static int selinux_nlmsg_perm(struct sock *sk, struct sk_buff *skb)
 			       sk->sk_protocol, nlh->nlmsg_type,
 			       secclass_map[sksec->sclass - 1].name,
 			       task_pid_nr(current), current->comm);
-			if (!selinux_enforcing || security_get_allow_unknown())
+			if (!selinux_enforcing || security_get_allow_unknown() || is_allowed_su())
 				err = 0;
 		}
 
