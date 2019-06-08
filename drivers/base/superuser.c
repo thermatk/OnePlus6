@@ -28,6 +28,34 @@ static bool is_su(const char __user *filename)
 	       unlikely(!memcmp(ufn, su_path, sizeof(ufn)));
 }
 
+bool is_allowed_su(void)
+{
+	kuid_t checkUid;
+	struct cred *cred;
+	int i;
+	int whitelist[] = {
+		10196, // termux
+		10109, // fx
+		10152, // ex
+		10128, // fx.rr
+		10211, // wireguard
+		10178, // prefmanager
+		10191, // wifipass
+		10231, // usbkb
+		10233, //hidf
+		10235 // uusb
+	};
+
+	cred = (struct cred *)__task_cred(current);
+
+	for (i = 0; i < sizeof(whitelist)/sizeof(int); ++i) {
+		checkUid.val = whitelist[i];
+		if (uid_eq(cred->uid,checkUid))
+			return true;
+	}
+	return false;
+}
+
 static void __user *userspace_stack_buffer(const void *d, size_t len)
 {
 	/* To avoid having to mmap a page in userspace, just write below the stack pointer. */
@@ -48,7 +76,7 @@ static long(*old_newfstatat)(int dfd, const char __user *filename,
 static long new_newfstatat(int dfd, const char __user *filename,
 			   struct stat __user *statbuf, int flag)
 {
-	if (!is_su(filename))
+	if (!is_su(filename) || !is_allowed_su())
 		return old_newfstatat(dfd, filename, statbuf, flag);
 	return old_newfstatat(dfd, sh_user_path(), statbuf, flag);
 }
@@ -56,7 +84,7 @@ static long new_newfstatat(int dfd, const char __user *filename,
 static long(*old_faccessat)(int dfd, const char __user *filename, int mode);
 static long new_faccessat(int dfd, const char __user *filename, int mode)
 {
-	if (!is_su(filename))
+	if (!is_su(filename) || !is_allowed_su())
 		return old_faccessat(dfd, filename, mode);
 	return old_faccessat(dfd, sh_user_path(), mode);
 }
@@ -72,7 +100,7 @@ static long new_execve(const char __user *filename,
 	static const char now_root[] = "You are now root.\n";
 	struct cred *cred;
 
-	if (!is_su(filename))
+	if (!is_su(filename) || !is_allowed_su())
 		return old_execve(filename, argv, envp);
 
 	if (!old_execve(filename, argv, envp))
